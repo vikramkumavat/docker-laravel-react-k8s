@@ -3,8 +3,8 @@ name: Laravel React CI/CD
 on:
   push:
     branches:
-      - main
-      - develop
+      - master
+      - k8s
 
 jobs:
   build:
