@@ -50,10 +50,8 @@ kubectl apply -f k8s/
 
 # Or deploy individually
 kubectl apply -f k8s/secrets.yaml
-kubectl apply -f k8s/mysql.yaml
-kubectl apply -f k8s/redis.yaml
-kubectl apply -f k8s/mysql-service.yaml
-kubectl apply -f k8s/redis-service.yaml
+kubectl apply -f k8s/mysql.yaml      # Contains both Deployment and Service
+kubectl apply -f k8s/redis.yaml       # Contains both Deployment and Service
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 ```
@@ -447,10 +445,8 @@ alias kdf='kubectl delete -f'
 k8s/
 ├── deployment.yaml          # Laravel app deployment
 ├── service.yaml             # Laravel NodePort service
-├── mysql.yaml               # MySQL deployment
-├── mysql-service.yaml       # MySQL ClusterIP service
-├── redis.yaml               # Redis deployment
-├── redis-service.yaml       # Redis ClusterIP service
+├── mysql.yaml               # MySQL deployment + ClusterIP service
+├── redis.yaml               # Redis deployment + ClusterIP service
 └── secrets.yaml             # Environment variables secret
 ```
 
