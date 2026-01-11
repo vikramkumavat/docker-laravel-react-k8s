@@ -1,595 +1,486 @@
-# Laravel + React Docker Application
+# Laravel React Kubernetes Setup
 
-A modern full-stack web application built with Laravel 12 (PHP 8.2) backend and React frontend (Vite), containerized with Docker using MySQL and Redis.
+A complete Kubernetes setup for running Laravel + React application with MySQL and Redis using Minikube.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat&logo=laravel&logoColor=white" alt="Laravel Version">
-  <img src="https://img.shields.io/badge/PHP-8.2-777BB4?style=flat&logo=php&logoColor=white" alt="PHP Version">
-  <img src="https://img.shields.io/badge/React-Vite-61DAFB?style=flat&logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql&logoColor=white" alt="MySQL">
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis">
-</p>
+## Architecture
 
-## 🚀 Features
+- **Laravel Application**: PHP 8.2 with Nginx
+- **MySQL 8.0**: Database server
+- **Redis Alpine**: Cache and session store
+- **Kubernetes**: Orchestration via Minikube
 
-- **Laravel 12** - Modern PHP framework with expressive syntax
-- **React + Vite 7** - Fast frontend build tool and React framework
-- **Tailwind CSS v4** - Utility-first CSS framework
-- **Docker & Docker Compose** - Containerized application with MySQL and Redis
-- **Nginx + PHP-FPM 8.2** - Production-ready web server configuration
-- **MySQL 8.0** - Relational database for data storage
-- **Redis** - In-memory data store for caching and sessions
-- **CI/CD Pipeline** - Automated testing and deployment with GitHub Actions
+## Prerequisites
 
-## 📋 Prerequisites
+- [Minikube](https://minikube.sigs.k8s.io/docs/start/) installed and running
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) installed
+- Docker Hub account (for pulling private images)
+- Docker installed (for building images)
 
-Before you begin, ensure you have the following installed:
+## Quick Start
 
-- **Docker** (version 20.10 or higher) - [Download Docker](https://www.docker.com/get-started)
-- **Docker Compose** (version 2.0 or higher) - Included with Docker Desktop
-- **Git** - [Download Git](https://git-scm.com/downloads)
-
-Verify your installation:
+### 1. Start Minikube
 
 ```bash
-docker --version
-docker-compose --version
-git --version
+minikube start
 ```
 
-## 🏗️ Project Architecture
-
-This project uses Docker Compose to orchestrate three services:
-
-```
-┌─────────────────────────────────────────────────┐
-│           Docker Compose Network                 │
-│                                                 │
-│  ┌──────────────┐    ┌──────────┐  ┌─────────┐ │
-│  │   Laravel    │───▶│  MySQL   │  │  Redis  │ │
-│  │   App        │    │  8.0     │  │ Alpine  │ │
-│  │  (Nginx +    │    │          │  │         │ │
-│  │   PHP-FPM)   │    │          │  │         │ │
-│  └──────────────┘    └──────────┘  └─────────┘ │
-│         │                                         │
-│         └──▶ Port 8000 (Host)                    │
-└─────────────────────────────────────────────────┘
+Verify Minikube is running:
+```bash
+kubectl get nodes
 ```
 
-### Services
+### 2. Create Docker Hub Secret
 
-- **app** - Laravel application with Nginx and PHP-FPM
-- **mysql** - MySQL 8.0 database server
-- **redis** - Redis cache and session store
-
-## 🚀 Quick Start Guide
-
-### Step 1: Clone the Repository
+Create a secret to pull images from Docker Hub:
 
 ```bash
-git clone <repository-url>
-cd laravel-react-docker-2025
+kubectl create secret docker-registry dockerhub-secret \
+  --docker-username=YOUR_DOCKER_USERNAME \
+  --docker-password=YOUR_DOCKER_PASSWORD \
+  --docker-email=YOUR_EMAIL
 ```
 
-### Step 2: Create Environment File
+### 3. Deploy All Services
 
-Create a `.env` file in the root directory:
+Deploy all Kubernetes resources:
 
 ```bash
-# Windows (PowerShell)
-Copy-Item .env.example .env
+# Deploy all resources at once
+kubectl apply -f k8s/
 
-# Linux/Mac
-cp .env.example .env
+# Or deploy individually
+kubectl apply -f k8s/secrets.yaml
+kubectl apply -f k8s/mysql.yaml
+kubectl apply -f k8s/redis.yaml
+kubectl apply -f k8s/mysql-service.yaml
+kubectl apply -f k8s/redis-service.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
 ```
 
-### Step 3: Configure Environment Variables
+### 4. Verify Deployment
 
-Edit the `.env` file and set the following **required** configuration:
-
-```env
-APP_NAME=Laravel
-APP_ENV=local
-APP_KEY=
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-# MySQL Configuration (MUST match docker-compose.yml)
-DB_CONNECTION=mysql
-DB_HOST=mysql              # ⚠️ Use service name, NOT 127.0.0.1
-DB_PORT=3306
-DB_DATABASE=laravel        # Matches MYSQL_DATABASE in docker-compose.yml
-DB_USERNAME=laravel        # Matches MYSQL_USER in docker-compose.yml
-DB_PASSWORD=laravel        # Matches MYSQL_PASSWORD in docker-compose.yml
-
-# Redis Configuration (MUST use service name)
-REDIS_CLIENT=phpredis
-REDIS_HOST=redis           # ⚠️ Use service name, NOT 127.0.0.1
-REDIS_PORT=6379
-REDIS_PASSWORD=null
-
-# Session & Cache Configuration
-SESSION_DRIVER=database
-CACHE_STORE=redis          # Using Redis for caching
-QUEUE_CONNECTION=redis     # Using Redis for queues
+Check all pods are running:
+```bash
+kubectl get pods
 ```
 
-> **⚠️ CRITICAL**: In Docker Compose, always use service names (`mysql`, `redis`) as hostnames, **NOT** `127.0.0.1` or `localhost`. Services communicate through the Docker network using service names.
+Expected output:
+```
+NAME                             READY   STATUS    RESTARTS   AGE
+laravel-react-xxxxx-xxxxx        1/1     Running   0          Xm
+mysql-xxxxx-xxxxx                1/1     Running   0          Xm
+redis-xxxxx-xxxxx                1/1     Running   0          Xm
+```
 
-### Step 4: Build Docker Images
+Check all services:
+```bash
+kubectl get services
+```
 
-Build all Docker images (this may take 5-10 minutes on first run):
+Expected output:
+```
+NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubernetes              ClusterIP   10.96.0.1       <none>        443/TCP         Xm
+laravel-react-service   NodePort    10.97.81.45     <none>        80:30779/TCP    Xm
+mysql                   ClusterIP   10.101.144.120  <none>        3306/TCP        Xm
+redis                   ClusterIP   10.99.205.102   <none>        6379/TCP        Xm
+```
+
+### 5. Run Database Migrations
+
+Execute migrations inside the Laravel pod:
 
 ```bash
-docker-compose build --no-cache
+# Get the pod name first
+POD_NAME=$(kubectl get pods -l app=laravel-react -o jsonpath='{.items[0].metadata.name}')
+
+# Run migrations
+kubectl exec $POD_NAME -- php artisan migrate --force
 ```
 
-**What this does:**
-- Builds the Laravel app image with PHP 8.2-FPM, Nginx, and all dependencies
-- Installs Composer packages
-- Installs and builds React/Vite assets
-- Pulls MySQL 8.0 and Redis Alpine images
+Or use the deployment directly:
+```bash
+kubectl exec deployment/laravel-react -- php artisan migrate --force
+```
 
-### Step 5: Start All Services
+### 6. Access the Application
 
-Start all containers in detached mode:
+Open the application in your browser:
 
 ```bash
-docker-compose up -d
+minikube service laravel-react-service
 ```
 
-**What this does:**
-- Starts MySQL container and waits for it to be healthy
-- Starts Redis container
-- Starts Laravel app container (after MySQL is ready)
+Or get the URL manually:
+```bash
+minikube service laravel-react-service --url
+```
 
-### Step 6: Check Service Status
+The service is also accessible via NodePort. Get the port:
+```bash
+kubectl get service laravel-react-service
+```
 
-Verify all services are running:
+Then access: `http://<minikube-ip>:<NodePort>` (e.g., `http://192.168.49.2:30779`)
+
+## Debugging Commands
+
+### Check Pod Status
 
 ```bash
-docker-compose ps
+# List all pods with details
+kubectl get pods -o wide
+
+# Describe a specific pod
+kubectl describe pod <pod-name>
+
+# Watch pods in real-time
+kubectl get pods -w
 ```
 
-You should see all three services with status "Up":
-
-```
-NAME                STATUS          PORTS
-laravel_react_app   Up              0.0.0.0:8000->80/tcp
-laravel_mysql       Up (healthy)    0.0.0.0:3306->3306/tcp
-laravel_redis       Up              0.0.0.0:6379->6379/tcp
-```
-
-### Step 7: Wait for MySQL to Initialize
-
-MySQL needs a few seconds to fully initialize. Check the logs:
+### View Logs
 
 ```bash
-docker-compose logs mysql
+# Laravel application logs
+kubectl logs deployment/laravel-react
+kubectl logs <pod-name>
+
+# Follow logs in real-time
+kubectl logs -f deployment/laravel-react
+
+# Last 50 lines
+kubectl logs deployment/laravel-react --tail=50
+
+# Logs from a specific container (if multiple containers)
+kubectl logs <pod-name> -c app
 ```
 
-Wait until you see: `ready for connections`
-
-### Step 8: Initialize Laravel Application
-
-Enter the app container and set up Laravel:
+### Check Environment Variables
 
 ```bash
-# Enter the container
-docker-compose exec app bash
+# List all environment variables in the pod
+kubectl exec <pod-name> -- env
 
-# Generate application key
-php artisan key:generate
+# Check specific Laravel variables
+kubectl exec <pod-name> -- env | grep -E 'APP_|DB_|REDIS_'
 
-# Run database migrations
-php artisan migrate
-
-# (Optional) Seed the database
-php artisan db:seed
-
-# Exit the container
-exit
+# Verify APP_KEY is set
+kubectl exec <pod-name> -- sh -c "printenv APP_KEY"
 ```
 
-### Step 9: Access the Application
-
-Open your browser and navigate to:
-
-**🌐 http://localhost:8000**
-
-You should see the Laravel welcome page!
-
-## 📝 Complete Setup Commands (Copy & Paste)
-
-Here's the complete setup in one go:
+### Execute Commands in Pods
 
 ```bash
-# 1. Clone repository (if not already done)
-git clone <repository-url>
-cd laravel-react-docker-2025
+# Open bash shell in Laravel pod
+kubectl exec -it deployment/laravel-react -- bash
 
-# 2. Create .env file
-cp .env.example .env
+# Or use pod name
+kubectl exec -it <pod-name> -- bash
 
-# 3. Edit .env file (use your editor)
-# Set: DB_HOST=mysql, DB_DATABASE=laravel, DB_USERNAME=laravel, DB_PASSWORD=laravel
-# Set: REDIS_HOST=redis
+# Run Laravel artisan commands
+kubectl exec deployment/laravel-react -- php artisan <command>
 
-# 4. Build Docker images
-docker-compose build --no-cache
+# Check Laravel configuration
+kubectl exec deployment/laravel-react -- php artisan config:show
 
-# 5. Start all services
-docker-compose up -d
-
-# 6. Wait for MySQL (check logs)
-docker-compose logs mysql
-
-# 7. Initialize Laravel
-docker-compose exec app php artisan key:generate
-docker-compose exec app php artisan migrate
-
-# 8. Access application
-# Open: http://localhost:8000
+# Clear Laravel cache
+kubectl exec deployment/laravel-react -- php artisan config:clear
+kubectl exec deployment/laravel-react -- php artisan cache:clear
+kubectl exec deployment/laravel-react -- php artisan route:clear
+kubectl exec deployment/laravel-react -- php artisan view:clear
 ```
 
-## 🔧 Common Development Commands
-
-### Container Management
+### Database Debugging
 
 ```bash
-# Start all services
-docker-compose up -d
+# Connect to MySQL pod
+kubectl exec -it deployment/mysql -- mysql -u root -proot
 
-# Stop all services
-docker-compose down
+# Or use pod name
+kubectl exec -it <mysql-pod-name> -- mysql -u root -proot
 
-# Stop and remove volumes (⚠️ deletes database data)
-docker-compose down -v
+# Check database from Laravel pod
+kubectl exec deployment/laravel-react -- php artisan db:show
 
-# View logs
-docker-compose logs -f              # All services
-docker-compose logs -f app          # App only
-docker-compose logs -f mysql        # MySQL only
-docker-compose logs -f redis        # Redis only
-
-# Restart a specific service
-docker-compose restart app
-docker-compose restart mysql
-docker-compose restart redis
-
-# Rebuild and restart
-docker-compose up -d --build --force-recreate
+# Test database connection
+kubectl exec deployment/laravel-react -- php artisan tinker
+# Then in tinker: DB::connection()->getPdo();
 ```
 
-### Laravel Commands (Inside Container)
+### Redis Debugging
 
 ```bash
-# Enter the container
-docker-compose exec app bash
-
-# Artisan commands
-php artisan migrate
-php artisan migrate:fresh --seed
-php artisan tinker
-php artisan route:list
-php artisan cache:clear
-php artisan config:clear
-php artisan view:clear
-php artisan optimize
-
-# Run tests
-php artisan test
-
-# Exit container
-exit
-```
-
-### Laravel Commands (From Host)
-
-You can run Laravel commands without entering the container:
-
-```bash
-docker-compose exec app php artisan migrate
-docker-compose exec app php artisan tinker
-docker-compose exec app php artisan route:list
-docker-compose exec app php artisan test
-```
-
-### Database Commands
-
-```bash
-# Access MySQL directly
-docker-compose exec mysql mysql -u laravel -plaravel laravel
-
-# Or as root
-docker-compose exec mysql mysql -u root -proot
-
-# Backup database
-docker-compose exec mysql mysqldump -u laravel -plaravel laravel > backup.sql
-
-# Restore database
-docker-compose exec -T mysql mysql -u laravel -plaravel laravel < backup.sql
-```
-
-### Redis Commands
-
-```bash
-# Access Redis CLI
-docker-compose exec redis redis-cli
+# Connect to Redis pod
+kubectl exec -it deployment/redis -- redis-cli
 
 # Test Redis connection
-docker-compose exec redis redis-cli ping
-# Should return: PONG
+kubectl exec deployment/redis -- redis-cli ping
 
-# View all keys
-docker-compose exec redis redis-cli KEYS "*"
-
-# Clear Redis cache
-docker-compose exec redis redis-cli FLUSHALL
+# Check Redis info
+kubectl exec deployment/redis -- redis-cli info
 ```
 
-### Frontend Development
+### Service Discovery
 
 ```bash
-# Install npm dependencies (if needed)
-docker-compose exec app npm install
+# Check if services are discoverable
+kubectl get services
 
-# Build assets for production
-docker-compose exec app npm run build
+# Test MySQL service connectivity from Laravel pod
+kubectl exec deployment/laravel-react -- sh -c "nc -zv mysql 3306"
 
-# Watch for changes (development mode)
-docker-compose exec app npm run dev
+# Test Redis service connectivity
+kubectl exec deployment/laravel-react -- sh -c "nc -zv redis 6379"
 ```
 
-## 🛠️ Troubleshooting
+### Check Secrets
 
-### Issue: "getaddrinfo for mysql failed"
-
-**Error:**
-```
-SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo for mysql failed
-```
-
-**Solution:**
-1. Check your `.env` file - `DB_HOST` must be `mysql` (service name), not `127.0.0.1`
-2. Verify MySQL container is running: `docker-compose ps`
-3. Wait for MySQL to be healthy: `docker-compose logs mysql`
-4. Restart services: `docker-compose restart`
-
-### Issue: MySQL Connection Refused
-
-**Solution:**
 ```bash
-# Check MySQL is healthy
-docker-compose ps mysql
+# List all secrets
+kubectl get secrets
+
+# Describe secret
+kubectl describe secret laravel-env
+
+# View secret data (base64 encoded)
+kubectl get secret laravel-env -o yaml
+
+# Decode a specific secret value
+kubectl get secret laravel-env -o jsonpath='{.data.APP_KEY}' | base64 -d
+```
+
+## Common Operations
+
+### Restart Services
+
+```bash
+# Restart Laravel deployment
+kubectl rollout restart deployment laravel-react
+
+# Restart MySQL
+kubectl rollout restart deployment mysql
+
+# Restart Redis
+kubectl rollout restart deployment redis
+
+# Check rollout status
+kubectl rollout status deployment laravel-react
+```
+
+### Update Configuration
+
+```bash
+# Update secrets
+kubectl apply -f k8s/secrets.yaml
+
+# Update deployment
+kubectl apply -f k8s/deployment.yaml
+
+# Force pod recreation after config changes
+kubectl rollout restart deployment laravel-react
+```
+
+### Scale Services
+
+```bash
+# Scale Laravel app to 3 replicas
+kubectl scale deployment laravel-react --replicas=3
+
+# Scale back to 1
+kubectl scale deployment laravel-react --replicas=1
+```
+
+### Port Forwarding (Alternative Access)
+
+```bash
+# Forward Laravel service to localhost
+kubectl port-forward service/laravel-react-service 8080:80
+
+# Forward MySQL to localhost
+kubectl port-forward service/mysql 3306:3306
+
+# Forward Redis to localhost
+kubectl port-forward service/redis 6379:6379
+```
+
+Then access:
+- Laravel: `http://localhost:8080`
+- MySQL: `localhost:3306`
+- Redis: `localhost:6379`
+
+## Troubleshooting
+
+### Pod Not Starting
+
+```bash
+# Check pod events
+kubectl describe pod <pod-name>
+
+# Check pod logs
+kubectl logs <pod-name>
+
+# Check if image pull is successful
+kubectl describe pod <pod-name> | grep -i image
+```
+
+### 500 Server Error
+
+1. **Check Laravel logs:**
+   ```bash
+   kubectl logs deployment/laravel-react --tail=100
+   ```
+
+2. **Verify environment variables are loaded:**
+   ```bash
+   kubectl exec deployment/laravel-react -- env | grep APP_KEY
+   ```
+
+3. **Check database connection:**
+   ```bash
+   kubectl exec deployment/laravel-react -- php artisan tinker
+   # Then: DB::connection()->getPdo();
+   ```
+
+4. **Verify services are running:**
+   ```bash
+   kubectl get pods
+   kubectl get services
+   ```
+
+5. **Check if migrations are run:**
+   ```bash
+   kubectl exec deployment/laravel-react -- php artisan migrate:status
+   ```
+
+### Database Connection Issues
+
+```bash
+# Verify MySQL service exists
+kubectl get service mysql
+
+# Test connection from Laravel pod
+kubectl exec deployment/laravel-react -- sh -c "nc -zv mysql 3306"
 
 # Check MySQL logs
-docker-compose logs mysql
+kubectl logs deployment/mysql
 
-# Verify credentials match docker-compose.yml
-# DB_USERNAME=laravel, DB_PASSWORD=laravel
+# Verify database credentials in secret
+kubectl get secret laravel-env -o jsonpath='{.data.DB_HOST}' | base64 -d
 ```
 
-### Issue: Redis Connection Failed
+### Redis Connection Issues
 
-**Solution:**
 ```bash
-# Check Redis is running
-docker-compose ps redis
+# Verify Redis service exists
+kubectl get service redis
 
-# Test Redis connection
-docker-compose exec redis redis-cli ping
+# Test connection from Laravel pod
+kubectl exec deployment/laravel-react -- sh -c "nc -zv redis 6379"
 
-# Verify .env has: REDIS_HOST=redis (not 127.0.0.1)
+# Check Redis logs
+kubectl logs deployment/redis
 ```
 
-### Issue: Permission Denied Errors
+### Environment Variables Not Loading
 
-**Solution:**
 ```bash
-# Fix storage permissions
-docker-compose exec app chown -R www-data:www-data /var/www/storage
-docker-compose exec app chmod -R 775 /var/www/storage
-docker-compose exec app chmod -R 775 /var/www/bootstrap/cache
+# Verify secret exists
+kubectl get secret laravel-env
+
+# Check deployment configuration
+kubectl get deployment laravel-react -o yaml | grep -A 5 envFrom
+
+# Reapply deployment
+kubectl apply -f k8s/deployment.yaml
+kubectl rollout restart deployment laravel-react
 ```
 
-### Issue: Port Already in Use
+## Cleanup
 
-**Error:**
-```
-Bind for 0.0.0.0:8000 failed: port is already allocated
-```
+### Delete All Resources
 
-**Solution:**
 ```bash
-# Find what's using the port
-# Windows
-netstat -ano | findstr :8000
+# Delete all resources
+kubectl delete -f k8s/
 
-# Linux/Mac
-lsof -i :8000
-
-# Change port in docker-compose.yml
-ports:
-  - "8001:80"  # Use 8001 instead of 8000
+# Or delete individually
+kubectl delete deployment laravel-react
+kubectl delete deployment mysql
+kubectl delete deployment redis
+kubectl delete service laravel-react-service
+kubectl delete service mysql
+kubectl delete service redis
+kubectl delete secret laravel-env
 ```
 
-### Issue: Container Won't Start
+### Stop Minikube
 
-**Solution:**
 ```bash
-# Check logs for errors
-docker-compose logs app
-
-# Rebuild from scratch
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up -d
+minikube stop
 ```
 
-### Issue: Changes Not Reflecting
+### Delete Minikube Cluster
 
-**Solution:**
 ```bash
-# Clear Laravel caches
-docker-compose exec app php artisan cache:clear
-docker-compose exec app php artisan config:clear
-docker-compose exec app php artisan view:clear
-docker-compose exec app php artisan route:clear
-
-# Rebuild frontend assets
-docker-compose exec app npm run build
+minikube delete
 ```
 
-## 📊 Service Details
+## Useful Aliases (Optional)
 
-### MySQL Service
+Add these to your `~/.bashrc` or `~/.zshrc`:
 
-- **Image**: `mysql:8.0`
-- **Container Name**: `laravel_mysql`
-- **Port**: `3306:3306` (host:container)
-- **Database**: `laravel`
-- **Root Password**: `root`
-- **User**: `laravel`
-- **Password**: `laravel`
-- **Volume**: `mysql_data` (persistent storage)
-
-### Redis Service
-
-- **Image**: `redis:alpine`
-- **Container Name**: `laravel_redis`
-- **Port**: `6379:6379` (host:container)
-- **No Password**: Default (null)
-
-### Laravel App Service
-
-- **Image**: Built from `Dockerfile`
-- **Container Name**: `laravel_react_app`
-- **Port**: `8000:80` (host:container)
-- **PHP Version**: 8.2-FPM
-- **Web Server**: Nginx
-- **Node.js**: Included for Vite builds
-
-## 🔐 Environment Variables Reference
-
-### Required Variables
-
-```env
-# Application
-APP_NAME=Laravel
-APP_ENV=local
-APP_KEY=base64:...          # Generate with: php artisan key:generate
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-# Database (MySQL)
-DB_CONNECTION=mysql
-DB_HOST=mysql               # Service name in docker-compose.yml
-DB_PORT=3306
-DB_DATABASE=laravel
-DB_USERNAME=laravel
-DB_PASSWORD=laravel
-
-# Redis
-REDIS_CLIENT=phpredis
-REDIS_HOST=redis            # Service name in docker-compose.yml
-REDIS_PORT=6379
-REDIS_PASSWORD=null
-
-# Session & Cache
-SESSION_DRIVER=database
-CACHE_STORE=redis
-QUEUE_CONNECTION=redis
+```bash
+alias k='kubectl'
+alias kgp='kubectl get pods'
+alias kgs='kubectl get services'
+alias kdp='kubectl describe pod'
+alias kl='kubectl logs'
+alias ke='kubectl exec -it'
+alias kaf='kubectl apply -f'
+alias kdf='kubectl delete -f'
 ```
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
-laravel-react-docker-2025/
-├── app/                    # Laravel application code
-│   ├── Http/Controllers/   # Application controllers
-│   ├── Models/             # Eloquent models
-│   └── Providers/          # Service providers
-├── bootstrap/              # Laravel bootstrap files
-├── config/                 # Laravel configuration files
-├── database/               # Migrations, seeders, factories
-│   ├── migrations/         # Database migrations
-│   ├── seeders/            # Database seeders
-│   └── factories/          # Model factories
-├── public/                 # Public web root
-├── resources/
-│   ├── css/               # CSS files
-│   ├── js/                # React components (Vite)
-│   │   ├── app.js         # Main React entry point
-│   │   └── bootstrap.js   # Bootstrap file
-│   └── views/             # Blade templates
-├── routes/                 # Application routes
-│   └── web.php            # Web routes
-├── storage/                # Storage directory
-├── tests/                  # PHPUnit tests
-│   ├── Feature/           # Feature tests
-│   └── Unit/              # Unit tests
-├── nginx/
-│   └── default.conf       # Nginx configuration
-├── .github/
-│   └── workflows/
-│       └── ci-cd.yml      # GitHub Actions CI/CD workflow
-├── Dockerfile              # Docker image definition
-├── docker-compose.yml      # Docker Compose configuration
-├── vite.config.js         # Vite configuration
-├── VERSION                 # Application version
-└── README.md
+k8s/
+├── deployment.yaml          # Laravel app deployment
+├── service.yaml             # Laravel NodePort service
+├── mysql.yaml               # MySQL deployment
+├── mysql-service.yaml       # MySQL ClusterIP service
+├── redis.yaml               # Redis deployment
+├── redis-service.yaml       # Redis ClusterIP service
+└── secrets.yaml             # Environment variables secret
 ```
 
-## 🚢 CI/CD Pipeline
+## Configuration Files
 
-This project includes automated CI/CD with GitHub Actions:
+### Environment Variables (secrets.yaml)
 
-- **Tests**: Runs PHPUnit tests with SQLite
-- **Build**: Builds Docker image
-- **Push**: Publishes to Docker Hub
+Key variables configured:
+- `APP_KEY`: Laravel encryption key
+- `DB_CONNECTION`: mysql
+- `DB_HOST`: mysql (service name)
+- `DB_DATABASE`: laravel
+- `DB_USERNAME`: root
+- `DB_PASSWORD`: root
+- `REDIS_HOST`: redis (service name)
+- `REDIS_PORT`: 6379
 
-See `.github/workflows/ci-cd.yml` for details.
+**Note:** Update `secrets.yaml` with your production values before deploying to production.
 
-## ☸️ Kubernetes Deployment
+## Additional Resources
 
-Kubernetes manifests are available in the `k8s/` directory for production deployment.
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Minikube Documentation](https://minikube.sigs.k8s.io/docs/)
+- [Laravel Documentation](https://laravel.com/docs)
+- [Docker Documentation](https://docs.docker.com/)
 
-## 📚 Technology Stack
+## Support
 
-- **Backend**: Laravel 12, PHP 8.2-FPM
-- **Frontend**: React, Vite 7, Tailwind CSS v4
-- **Web Server**: Nginx
-- **Database**: MySQL 8.0
-- **Cache**: Redis (Alpine)
-- **Containerization**: Docker, Docker Compose
-- **CI/CD**: GitHub Actions
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## 🔗 Useful Links
-
-- [Laravel Documentation](https://laravel.com/docs/12.x)
-- [React Documentation](https://react.dev)
-- [Vite Documentation](https://vitejs.dev)
-- [Docker Documentation](https://docs.docker.com)
-- [MySQL Documentation](https://dev.mysql.com/doc/)
-- [Redis Documentation](https://redis.io/docs/)
-
----
-
-**Built with ❤️ using Laravel 12, React, Vite, Tailwind CSS, Docker, MySQL, and Redis**
-
-**Current Version**: 1.0.6
+For issues or questions:
+1. Check the troubleshooting section above
+2. Review pod logs: `kubectl logs deployment/laravel-react`
+3. Check pod events: `kubectl describe pod <pod-name>`
+4. Verify all services are running: `kubectl get pods && kubectl get services`

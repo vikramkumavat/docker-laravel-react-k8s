@@ -16,6 +16,9 @@ spec:
         - name: dockerhub-secret
       containers:
         - name: app
-          image: vk42/laravel-react-app:1.0.3
+          image: <your-docker-hub-username>/<your-image-name>:<tag> # Replace with your actual image name and tag ex: vk42/laravel-react-app:1.0.7
           ports:
             - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: laravel-env
