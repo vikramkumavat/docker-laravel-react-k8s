@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-react
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: laravel-react
+  template:
+    metadata:
+      labels:
+        app: laravel-react
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: app
+          image: vk42/laravel-react-app:1.0.3
+          ports:
+            - containerPort: 80
