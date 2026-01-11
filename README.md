@@ -484,3 +484,9 @@ For issues or questions:
 2. Review pod logs: `kubectl logs deployment/laravel-react`
 3. Check pod events: `kubectl describe pod <pod-name>`
 4. Verify all services are running: `kubectl get pods && kubectl get services`
+
+---
+
+**Built with ❤️ using Laravel 12, React, Vite, Tailwind CSS, Docker, MySQL, and Redis**
+
+**Current Version**: 1.0.6
