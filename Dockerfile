@@ -30,7 +30,8 @@ RUN docker-php-ext-install \
     gd \
     intl \
     zip \
-    opcache
+    opcache \
+    pcntl
 
 # ✅ Install Redis PHP extension (FIX)
 RUN pecl install redis \

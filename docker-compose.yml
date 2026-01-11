@@ -3,6 +3,7 @@ version: "3.9"
 services:
   app:
     build: .
+    # image: vk42/laravel-react-app:1.0.10
     container_name: laravel_react_app
     ports:
       - "8000:80"

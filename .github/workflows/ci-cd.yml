@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - k8s
+      - k8s-react-crud
   pull_request:
     branches:
       - master
